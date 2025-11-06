@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Transparent launch background to allow Flutter's first frame (app splash) to show immediately -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Transparent background -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+
+    <!-- NOTE: launcher icon removed from native splash so Flutter's splash screen appears directly -->
+</layer-list>

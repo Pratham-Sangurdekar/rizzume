@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Transparent launch background (v21+) so Flutter's splash screen shows immediately -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+
+    <!-- No centered bitmap here; Flutter will render its own splash screen on first frame -->
+</layer-list>

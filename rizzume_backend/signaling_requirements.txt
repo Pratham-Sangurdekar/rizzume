@@ -1,0 +1,10 @@
+# Rizzume WebRTC Signaling Server Requirements
+# Install with: pip install -r signaling_requirements.txt
+
+Flask==3.0.0
+Flask-SocketIO==5.3.6
+Flask-CORS==4.0.0
+python-socketio==5.11.0
+python-engineio==4.9.0
+simple-websocket==1.0.0
+eventlet==0.35.2
