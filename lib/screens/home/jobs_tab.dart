@@ -169,8 +169,71 @@ class _JobsTabState extends State<JobsTab> with SingleTickerProviderStateMixin, 
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Check back later for new opportunities!',
+                        'You\'ve seen all available jobs!',
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          // Show confirmation dialog
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              backgroundColor: const Color(0xFF2A2A2A),
+                              title: const Text('Reset Job History?', style: TextStyle(color: Colors.white)),
+                              content: const Text(
+                                'This will clear all your swipe history and show all jobs again. Your applications will remain saved.',
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF6C63FF),
+                                  ),
+                                  child: const Text('Reset'),
+                                ),
+                              ],
+                            ),
+                          );
+                          
+                          if (confirm == true && mounted) {
+                            // Show loading
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Resetting job history...'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                            
+                            // Clear history and reload
+                            await _jobsService.clearSwipeHistory();
+                            
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('✅ Job history reset! Swipe to discover jobs again.'),
+                                  backgroundColor: Colors.green,
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Reset & Show All Jobs'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6C63FF),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
                       ),
                     ],
                   ),

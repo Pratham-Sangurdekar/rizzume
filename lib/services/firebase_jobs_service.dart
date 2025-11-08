@@ -41,17 +41,26 @@ class FirebaseJobsService {
 
     try {
       final userId = _auth.currentUser?.uid;
-      if (userId == null) {
-        _stackController.add([]);
-        return;
-      }
+      print('🔄 Loading job stack (userId: ${userId ?? "guest"})');
 
-      // Get user's swipe history
-      final userSwipesDoc = await _db.collection('userJobSwipes').doc(userId).get();
-      final swipedJobIds = Set<String>.from(userSwipesDoc.data()?['swipedJobs'] ?? []);
+      // Even if not signed-in, attempt to load public jobs and treat as no swipes
+      // This avoids an empty UI for guests while still honoring swipe history for signed-in users
+      Set<String> swipedJobIds = <String>{};
+      if (userId != null) {
+        try {
+          // Get user's swipe history
+          final userSwipesDoc = await _db.collection('userJobSwipes').doc(userId).get();
+          swipedJobIds = Set<String>.from(userSwipesDoc.data()?['swipedJobs'] ?? []);
+          print('📋 User has swiped ${swipedJobIds.length} jobs');
+        } catch (e) {
+          print('⚠️ Error fetching swipe history: $e');
+          // Continue without swipe history - show all jobs
+        }
+      }
 
       // Fetch all available jobs (up to 50)
       // Note: Not ordering by postedDate to support jobs from website that may not have this field
+      print('🔍 Querying Firestore jobs collection...');
       final jobsSnapshot = await _db
           .collection('jobs')
           .limit(50)
@@ -59,10 +68,25 @@ class FirebaseJobsService {
 
       print('🔍 Fetched ${jobsSnapshot.docs.length} jobs from Firestore');
 
+      if (jobsSnapshot.docs.isEmpty) {
+        print('⚠️ No jobs found in Firestore! You may need to seed dummy jobs.');
+        _jobStack.clear();
+        _stackController.add([]);
+        return;
+      }
+
       // Filter out swiped jobs and parse all jobs
       final availableJobs = jobsSnapshot.docs
           .where((doc) => !swipedJobIds.contains(doc.id))
-          .map((doc) => JobOffer.fromFirestore(doc.data(), doc.id))
+          .map((doc) {
+            try {
+              return JobOffer.fromFirestore(doc.data(), doc.id);
+            } catch (e) {
+              print('❌ Error parsing job ${doc.id}: $e');
+              return null;
+            }
+          })
+          .whereType<JobOffer>() // Filter out nulls
           .toList();
 
       // Sort by postedDate (most recent first) - jobs without valid dates will still be included
@@ -71,6 +95,7 @@ class FirebaseJobsService {
       print('✅ ${availableJobs.length} jobs available after filtering (${swipedJobIds.length} already swiped)');
 
       if (availableJobs.isEmpty) {
+        print('⚠️ All jobs have been swiped! User needs to reset swipe history.');
         _jobStack.clear();
         _stackController.add([]);
         return;
@@ -93,8 +118,10 @@ class FirebaseJobsService {
 
       // Emit the new stack
       _stackController.add(List.unmodifiable(_jobStack));
-    } catch (e) {
-      print('Error loading job stack: $e');
+    } catch (e, stackTrace) {
+      print('❌ Error loading job stack: $e');
+      print('Stack trace: $stackTrace');
+      // Emit error state but don't crash the app
       _stackController.add([]);
     } finally {
       _isLoadingJobs = false;
